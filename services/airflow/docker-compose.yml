@@ -1,0 +1,22 @@
+services:
+  airflow:
+    image: apache/airflow:2.9.3
+    container_name: wine_airflow
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
+      - _PIP_ADDITIONAL_REQUIREMENTS=pandas==2.2.2 scikit-learn==1.5.2 mlflow==2.16.2 docker==7.1.0
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../../:/repo
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /repo
+    ports:
+      - "8080:8080"  # Airflow Web UI
+    command: >
+      bash -lc "
+      airflow db migrate &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
+      airflow webserver -p 8080 & airflow scheduler
+      "
+    restart: unless-stopped
