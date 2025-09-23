@@ -1,54 +1,54 @@
 # Wine Quality ML Pipeline — Data → Model → Deployment
-cd ~/services/airflow
 
+## 🚀 Quick Start
+
+### Run via Airflow
+```bash
+cd services/airflow
 docker compose up -d
+```
+Airflow UI → http://localhost:8080 (admin/admin)
 
-After building, go to http://localhost:8501/ for app.
+Streamlit App UI → http://localhost:8501/
 
-And http://localhost:8080/ for airflow (name:admin password: admin).
+P.S. Please, wait couple of minutes if pages not loading.
 
-Short, working example of a 3-stage ML pipeline scheduled every 5 minutes with Airflow:
+---
+# 📸 Screenshots
 
-Data engineering → load, clean, split → data/processed/{train,test}.csv
+✅ Airflow DAG:
 
-Model engineering → features, train, evaluate (RMSE, R²), save model → models/wine_model.pkl, logs in mlruns/
+![Airflow success](pipeline_example.jpg)
 
-Deployment → build & run FastAPI (model API) and Streamlit (UI) in separate Docker containers
+🎛️ Streamlit UI:
 
-What happens in each stage:
+![Streamlit UI](app_ui.jpg)
 
-Stage 1 — Data engineering (code/datasets/make_dataset.py)
+---
 
-Reads data/winequality-red.csv
+## ⚙️ Stages
 
-Cleans data (median imputation, IQR outlier removal)
+### Stage 1 — Data Engineering
+- Loads raw dataset (`data/winequality-red.csv`)
+- Cleans missing values & removes outliers (IQR)
+- Splits into train/test with stratification
+- Outputs → `data/processed/train.csv` & `test.csv`
 
-Stratified split → writes data/processed/train.csv and data/processed/test.csv
+### Stage 2 — Model Engineering
+- Pipeline: `StandardScaler` → `LinearRegression`
+- Trains on train data, evaluates on test data
+- Logs metrics (RMSE, R²) into **MLflow** (`mlruns/`)
+- Saves model to `models/wine_model.pkl`
 
-Stage 2 — Model engineering (code/models/train_model.py)
+### Stage 3 — Deployment
+- Builds Docker images from single `Dockerfile`:
+  - `wine_api` (FastAPI) → port `8000`
+  - `wine_app` (Streamlit) → port `8501`
+- Runs containers in shared network
 
-Builds pipeline: StandardScaler → LinearRegression
+### Orchestration — Airflow
+- DAG: `wine_pipeline_every_5_min`
+- Three tasks: `stage1_make_dataset → stage2_train_and_log → stage3_build_and_run`
+- Schedule: `*/5 * * * *`
 
-Trains on train.csv, evaluates on test.csv
-
-Logs metrics to MLflow
-
-Saves packed model (pipeline + feature list) to models/wine_model.pkl
-
-Stage 3 — Deployment (code/deployment/deploy.py)
-
-Uses Docker to build images:
-
-api (FastAPI)
-
-app (Streamlit)
-
-Recreates containers wine_api and wine_app in one Docker network
-
-Orchestration — Airflow (services/airflow/dags/pipeline.py)
-
-Three PythonOperator tasks: stage1 → stage2 → stage3
-
-Schedule: */5 * * * * (runs every five minutes)
-
-Runs scripts as separate processes
+---
