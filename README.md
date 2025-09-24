@@ -14,6 +14,49 @@ Streamlit App UI → http://localhost:8501/
 P.S. Please, wait couple of minutes if pages not loading.
 
 ---
+# Project Schema
+```bash 
+/pmldl
+|   app_ui.jpg                  # Screenshot of the Streamlit UI
+|   docker-compose.yml          # Compose file to run API + Streamlit App (to start airflow with services, use another compose)
+|   Dockerfile                  # Multi-stage build
+|   pipeline_example.jpg        # Screenshot of Airflow pipeline run
+|   README.md                   # Documentation itself
+|   requirements.txt            # Dpendencies
+|   
++---code
+|   +---datasets
+|   |       make_dataset.py     # Stage 1: data loading, cleaning, splitting
+|   |       
+|   +---deployment
+|   |   |   deploy.py           # Stage 3: build and run Docker containers via Docker SDK
+|   |   |   
+|   |   +---api
+|   |   |       main.py         # FastAPI service exposing /predict endpoint
+|   |   |       
+|   |   \---app
+|   |           streamlit_app.py # Streamlit app UI (user inputs wine features, shows prediction)
+|   |           
+|   \---models
+|           train_model.py      # Stage 2: feature processing, training, evaluation, model saving
+|           
++---data
+|   |   winequality-red.csv     # Raw dataset (red wine quality)
+|   |   
+|   \---processed
+|           test.csv            # Processed test split (generated in Stage 1)
+|           train.csv           # Processed train split (generated in Stage 1)
++---models
+|       wine_model.pkl          # Trained model artifact (generated in Stage 2)
+|       
+\---services
+    \---airflow
+        |   docker-compose.yml  # Compose file for Airflow (!!! Use this to start Web UI + Scheduler !!!)
+        |   
+        \---dags
+            |   pipeline.py     # Airflow DAG with 3 tasks: Stage1 → Stage2 → Stage3
+```
+---
 # 📸 Screenshots
 
 ✅ Airflow DAG:
